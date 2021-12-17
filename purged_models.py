@@ -84,13 +84,12 @@ class PurgedResNet(nn.Module):
     def __init__(self, model: Type[L0WideResNet], val_kwargs):
         super().__init__()
 
-        self.input_size = model.input_size
+        self.input_size = (3, 32, 32)
 
         # 1st conv before any network block
         _weight = model.conv1.weight.data
-        _bias = model.conv1.bias.data if model.conv1.use_bias else None
-        _kwargs = model.conv1.conv_kwargs
-        self.conv1 = create_purged_conv(_weight, _bias, _kwargs)
+        _kwargs = dict(stride=1, padding=1)
+        self.conv1 = create_purged_conv(_weight, None, _kwargs)
 
         self.l0_layers = []
         for i, network_block in enumerate([model.block1, model.block2, model.block3]):

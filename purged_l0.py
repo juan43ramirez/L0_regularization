@@ -3,6 +3,7 @@ import torch
 from utils import AverageMeter, accuracy
 from dataloaders import cifar10, cifar100
 from models import L0WideResNet
+from l0_layers import L0Conv2d
 from purged_models import PurgedResNet
 
 def get_top1(loader, model):
@@ -49,30 +50,40 @@ prec1 = checkpoint['best_prec1']
 time_acc = checkpoint['time_acc']
 
 print("Reported best", prec1)
-print("Current acc", time_acc)
+print("Current (time, train_error, val_error", time_acc[-1])
 
 model.load_state_dict(checkpoint['state_dict'])
 model = model.cuda()
 
-# Check train error
-dataload = cifar10 if dataset == 'c10' else cifar100
-train_loader, val_loader, _ = dataload(augment=True, batch_size=128)
+# # Check train error
+# dataload = cifar10 if dataset == 'c10' else cifar100
+# train_loader, val_loader, _ = dataload(augment=True, batch_size=128)
 
-model.train()
-train_top1 = get_top1(train_loader, model)
-print("Train error:", train_top1)
+# model.train()
+# train_top1 = get_top1(train_loader, model)
+# print("Train error:", train_top1)
 
-# Check val error
-model.train()
-val_top1 = get_top1(val_loader, model)
-print("Val dataset error:", val_top1)
+# # Check val error
+# model.train()
+# val_top1 = get_top1(val_loader, model)
+# print("Val dataset error:", val_top1)
 
-# Prune
-pruned_model = PurgedResNet(model)
-pruned_model = pruned_model.cuda()
-pruned_model.eval()
+# ------------- Asses Prune degree
 
-# New val_error after prune
+# Active gates and total gates.
+nag, nsg = [], []
 
+# Go over layers, select only L0 layers
+for layer in model.layers:
+    if isinstance(layer, L0Conv2d):
+        # Get gates
+        gates = layer.sample_z(1, sample=False)
+        gates = gates.view(-1)
+        # Binarize (implicit threshold of 0.)
+        gates = (gates > 0.).float() 
+        nag.append(sum(gates).int().item())
+        # Count
+        nsg.append(len(gates))#, layer.weights.data.shape[0])
 
-# Get number of parameters
+print(nag)
+print(nsg)
