@@ -71,7 +71,7 @@ def main():
     args.name += '_{}_{}'.format(args.depth, args.width)
     if args.dataset == 'c100':
         args.name += '_c100'
-    print('model:', args.name)
+    # print('model:', args.name)
     if args.tensorboard:
         # used for logging to TensorBoard
         from tensorboardX import SummaryWriter

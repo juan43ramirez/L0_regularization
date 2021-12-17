@@ -20,7 +20,7 @@ class MAPDense(Module):
             self.register_parameter('bias', None)
         self.floatTensor = torch.FloatTensor if not torch.cuda.is_available() else torch.cuda.FloatTensor
         self.reset_parameters()
-        print(self)
+        #print(self)
 
     def reset_parameters(self):
         init.kaiming_normal(self.weight, mode='fan_out')
@@ -87,7 +87,7 @@ class MAPConv2d(Module):
 
         self.reset_parameters()
         self.input_shape = None
-        print(self)
+        #print(self)
 
     def reset_parameters(self):
         init.kaiming_normal(self.weight, mode='fan_in')

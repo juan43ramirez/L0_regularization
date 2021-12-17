@@ -40,7 +40,7 @@ class L0Dense(Module):
             self.use_bias = True
         self.floatTensor = torch.FloatTensor if not torch.cuda.is_available() else torch.cuda.FloatTensor
         self.reset_parameters()
-        print(self)
+        #print(self)
 
     def reset_parameters(self):
         init.kaiming_normal(self.weights, mode='fan_out')
@@ -179,7 +179,7 @@ class L0Conv2d(Module):
             self.use_bias = True
 
         self.reset_parameters()
-        print(self)
+        #print(self)
 
     def reset_parameters(self):
         init.kaiming_normal(self.weights, mode='fan_in')
