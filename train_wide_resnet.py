@@ -163,7 +163,7 @@ def main():
         # remember best prec@1 and save checkpoint
         is_best = prec1 < best_prec1
         best_prec1 = min(prec1, best_prec1)
-        state_dict = model.module.state_dict() if multi_gpu else model.state_dict()
+        state_dict = model.module.state_dict() if args.multi_gpu else model.state_dict()
         state = {
             'epoch': epoch + 1,
             'state_dict': state_dict,
