@@ -47,7 +47,7 @@ parser.add_argument('--no-tensorboard', dest='tensorboard', action='store_false'
 parser.add_argument('--multi_gpu', action='store_true')
 parser.add_argument('--lamba', type=float, default=0.001,
                     help='Coefficient for the L0 term.')
-parser.add_argument('--beta_ema', type=float, default=0.99)
+parser.add_argument('--beta_ema', type=float, default=0.)
 parser.add_argument('--lr_decay_ratio', type=float, default=0.2)
 parser.add_argument('--dataset', choices=['c10', 'c100'], default='c10')
 parser.add_argument('--local_rep', action='store_true')
@@ -163,9 +163,10 @@ def main():
         # remember best prec@1 and save checkpoint
         is_best = prec1 < best_prec1
         best_prec1 = min(prec1, best_prec1)
+        state_dict = model.module.state_dict() if multi_gpu else model.state_dict()
         state = {
             'epoch': epoch + 1,
-            'state_dict': model.state_dict(),
+            'state_dict': state_dict,
             'best_prec1': best_prec1,
             'curr_prec1': prec1,
             'optimizer': optimizer.state_dict(),
@@ -184,7 +185,7 @@ def main():
             if model.module.beta_ema > 0:
                 state['avg_params'] = model.module.avg_param
                 state['steps_ema'] = model.module.steps_ema
-        save_checkpoint(state, is_best, args.name)
+        save_checkpoint(state, is_best, args.name + "_" + str(args.lamba))
     print('Best error: ', best_prec1)
     if args.tensorboard:
         writer.close()
@@ -210,7 +211,7 @@ def train(train_loader, model, criterion, optimizer, lr_schedule, epoch):
         data_time.update(time.time() - end)
         total_steps += 1
         if torch.cuda.is_available():
-            target = target.cuda(async=True)
+            target = target.cuda()
             input_ = input_.cuda()
         input_var = torch.autograd.Variable(input_)
         target_var = torch.autograd.Variable(target)
@@ -221,8 +222,8 @@ def train(train_loader, model, criterion, optimizer, lr_schedule, epoch):
 
         # measure accuracy and record loss
         prec1 = accuracy(output.data, target, topk=(1,))[0]
-        losses.update(loss.data[0], input_.size(0))
-        top1.update(100 - prec1[0], input_.size(0))
+        losses.update(loss.item(), input_.size(0))
+        top1.update(100 - prec1.item(), input_.size(0))
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -292,7 +293,7 @@ def validate(val_loader, model, criterion, epoch):
     end = time.time()
     for i, (input_, target) in enumerate(val_loader):
         if torch.cuda.is_available():
-            target = target.cuda(async=True)
+            target = target.cuda()
             input_ = input_.cuda()
         input_var = torch.autograd.Variable(input_, volatile=True)
         target_var = torch.autograd.Variable(target, volatile=True)
@@ -303,8 +304,8 @@ def validate(val_loader, model, criterion, epoch):
 
         # measure accuracy and record loss
         prec1 = accuracy(output.data, target, topk=(1,))[0]
-        losses.update(loss.data[0], input_.size(0))
-        top1.update(100 - prec1[0], input_.size(0))
+        losses.update(loss.item(), input_.size(0))
+        top1.update(100 - prec1.item(), input_.size(0))
 
         # measure elapsed time
         batch_time.update(time.time() - end)

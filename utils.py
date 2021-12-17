@@ -104,3 +104,14 @@ def save_checkpoint(state, is_best, name, filename='checkpoint.pth.tar'):
     torch.save(state, filename)
     if is_best:
         shutil.copyfile(filename, 'runs/%s/' % name + 'model_best.pth.tar')
+
+def get_final_features(in_size, module, verbose=False):
+    dummy_input = torch.ones(1, *in_size)
+    if torch.cuda.is_available():
+        dummy_input = dummy_input.cuda()
+    f = module(dummy_input)
+    if verbose:
+        print('conv_out_size: {}'.format(f.size()))
+
+    return f.size()[1:]
+
