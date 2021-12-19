@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 from utils import AverageMeter, accuracy
 from dataloaders import cifar10, cifar100
@@ -22,8 +23,8 @@ def get_top1(loader, model):
     return top1.avg
 
 # Config
-dataset = "c10" # "c100"
-lamba = 0.003
+dataset = "c100" # "c100"
+lamba = 0.002
 
 # Instantiate the model
 model = L0WideResNet(
@@ -64,7 +65,7 @@ model = model.cuda()
 # print("Train error:", train_top1)
 
 # # Check val error
-# model.train()
+# model.eval()
 # val_top1 = get_top1(val_loader, model)
 # print("Val dataset error:", val_top1)
 
@@ -79,11 +80,14 @@ for layer in model.layers:
         # Get gates
         gates = layer.sample_z(1, sample=False)
         gates = gates.view(-1)
+        print("Gates values", np.round(gates.detach().cpu().numpy(), 2))
         # Binarize (implicit threshold of 0.)
         gates = (gates > 0.).float() 
         nag.append(sum(gates).int().item())
         # Count
         nsg.append(len(gates))#, layer.weights.data.shape[0])
 
-print(nag)
-print(nsg)
+# For the last layer, check gates    
+
+print("Active gates:", nag)
+print("Sparsifiable gates:", nsg)
